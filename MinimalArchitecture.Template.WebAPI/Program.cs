@@ -1,6 +1,8 @@
+using Akka.Actor;
 using Akka.Cluster.Hosting;
 using Akka.Hosting;
 using Akka.Remote.Hosting;
+using MinimalArchitecture.Template.Application.Actors;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 
@@ -20,7 +22,7 @@ namespace MinimalArchitecture.Template.WebAPI
                     .Insert(0, AppJsonSerializerContext.Default);
             });
 
-            builder.Services.AddAkka("MinimalArchitecture.Template", (configBuilder, provider) =>
+            builder.Services.AddAkka("MinimalArchitecture.Template.Akka", (configBuilder, provider) =>
             {
                 var clusterOptions = new ClusterOptions
                 {
@@ -37,7 +39,16 @@ namespace MinimalArchitecture.Template.WebAPI
                 };
 
                 configBuilder.WithClustering(clusterOptions)
-                    .WithRemoting(remoteOptions);
+                    .WithRemoting(remoteOptions)
+                    .WithSingleton<TimerActor>("singleton-name", (a, b, c) =>
+                        Props.Create<TimerActor>(c.GetService<IHttpClientFactory>()), new ClusterSingletonOptions
+                        {
+                            Role = "MinimalArchitecture.Template.Akka"
+                        })
+                    .WithActors((system, registry, resolver) =>
+                    {
+
+                    });
             });
 
             var app = builder.Build();
