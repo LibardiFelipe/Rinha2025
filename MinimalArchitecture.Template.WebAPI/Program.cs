@@ -22,7 +22,9 @@ namespace MinimalArchitecture.Template.WebAPI
                     .Insert(0, AppJsonSerializerContext.Default);
             });
 
-            builder.Services.AddAkka("MinimalArchitecture.Template.Akka", (configBuilder, provider) =>
+            builder.Services.AddAkka(
+                "MinimalArchitecture.Template.Akka",
+                (configBuilder, provider) =>
             {
                 var clusterOptions = new ClusterOptions
                 {
@@ -40,8 +42,10 @@ namespace MinimalArchitecture.Template.WebAPI
 
                 configBuilder.WithClustering(clusterOptions)
                     .WithRemoting(remoteOptions)
-                    .WithSingleton<TimerActor>("singleton-name", (a, b, c) =>
-                        Props.Create<TimerActor>(c.GetService<IHttpClientFactory>()), new ClusterSingletonOptions
+                    .WithSingleton<TimerActor>(
+                        "singleton-name", (actorSystem, actorRegistry, dependencyResolver) =>
+                        Props.Create<TimerActor>(),
+                        new ClusterSingletonOptions
                         {
                             Role = "MinimalArchitecture.Template.Akka"
                         })
