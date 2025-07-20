@@ -22,10 +22,6 @@ namespace MinimalArchitecture.Template.WebAPI
             var builder = WebApplication.CreateSlimBuilder(args);
             var config = builder.Configuration;
 
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2Support", true);
-            builder.Services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
-
             builder.Services.AddOpenApi();
             builder.Services.ConfigureHttpJsonOptions(options =>
             {

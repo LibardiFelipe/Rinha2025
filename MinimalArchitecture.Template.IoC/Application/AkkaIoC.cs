@@ -5,12 +5,10 @@ using Akka.HealthCheck.Hosting.Web;
 using Akka.Hosting;
 using Akka.Remote.Hosting;
 using Akka.Routing;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MinimalArchitecture.Template.Application.Actors;
 using MinimalArchitecture.Template.Application.Configs;
-using MinimalArchitecture.Template.Domain.Repositories;
 using MinimalArchitecture.Template.Domain.Services;
 
 namespace MinimalArchitecture.Template.IoC.Application
@@ -21,8 +19,7 @@ namespace MinimalArchitecture.Template.IoC.Application
             this IServiceCollection services, IConfiguration config)
         {
             var akkaConfig = new AkkaConfig(config);
-
-            services.WithAkkaHealthCheck(HealthCheckType.All);
+            services.WithAkkaHealthCheck(HealthCheckType.Default | HealthCheckType.Cluster);
             services.AddAkka(akkaConfig.SystemName,
                 (configBuilder, provider) =>
                 {
