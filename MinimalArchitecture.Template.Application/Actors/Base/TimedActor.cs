@@ -28,8 +28,13 @@ namespace MinimalArchitecture.Template.Application.Actors.Base
 
         public ITimerScheduler Timers { get; set; } = null!;
 
-        protected virtual void AddListener(IActorRef actorRef) =>
+        protected virtual void AddListener(IActorRef actorRef)
+        {
             _liteners.Add(actorRef);
+
+            /* Já notifica o actor depois de ser adicionado */
+            actorRef.Tell(Notification);
+        }
 
         protected virtual Task TickAsync()
         {
