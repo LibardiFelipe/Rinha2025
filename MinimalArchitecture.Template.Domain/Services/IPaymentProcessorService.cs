@@ -1,12 +1,13 @@
-﻿using MinimalArchitecture.Template.Domain.Models;
+﻿using MinimalArchitecture.Template.Domain.Events;
+using MinimalArchitecture.Template.Domain.Models;
+using MinimalArchitecture.Template.Domain.Utils;
 
 namespace MinimalArchitecture.Template.Domain.Services
 {
     public interface IPaymentProcessorService
     {
-        Task<bool> ProcessAsync(
-            Guid correlationId, decimal amount,
-            DateTimeOffset requestedAt, CancellationToken cancellationToken = default);
+        Task<Result<PaymentReceivedEvent>> ProcessAsync(
+            PaymentReceivedEvent evt, CancellationToken cancellationToken = default);
 
         Task<ProcessorHealthModel> GetHealthAsync(
             CancellationToken cancellationToken = default);

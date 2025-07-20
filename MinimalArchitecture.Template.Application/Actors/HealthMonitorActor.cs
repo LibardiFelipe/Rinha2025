@@ -5,7 +5,7 @@ using MinimalArchitecture.Template.Domain.Services;
 
 namespace MinimalArchitecture.Template.Application.Actors
 {
-    public sealed class HealthMonitorActor : TimedActor<HealthUpdatedEvent>
+    public sealed class HealthMonitorActor : NotifiableTickActor<HealthUpdatedEvent>
     {
         private readonly IPaymentProcessorService _defaultPaymentProcessor;
         private readonly IPaymentProcessorService _fallbackPaymentProcessor;

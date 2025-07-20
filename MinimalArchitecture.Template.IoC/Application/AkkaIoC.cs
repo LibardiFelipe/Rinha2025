@@ -7,9 +7,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MinimalArchitecture.Template.Application.Actors;
 using MinimalArchitecture.Template.Application.Configs;
+using MinimalArchitecture.Template.Domain.Repositories;
 using MinimalArchitecture.Template.Domain.Services;
 
-namespace MinimalArchitecture.Template.IoC.Infrastructure
+namespace MinimalArchitecture.Template.IoC.Application
 {
     internal static class AkkaIoC
     {
@@ -33,19 +34,23 @@ namespace MinimalArchitecture.Template.IoC.Infrastructure
                         {
                             var defaultProcessor = dependencyResolver.GetService<IDefaultPaymentProcessorService>();
                             var fallbackProcessor = dependencyResolver.GetService<IFallbackPaymentProcessorService>();
+                            var serviceProvider = dependencyResolver.GetService<IServiceProvider>();
 
                             var defaultPool = actorSystem.ActorOf(
-                                Props.Create<PaymentProcessorActor>("default", defaultProcessor)
+                                Props.Create<PaymentProcessorActor>("default", serviceProvider, defaultProcessor)
                                     .WithRouter(new SmallestMailboxPool(nrOfInstances: 5)), name: "default-pool");
 
                             var fallbackPool = actorSystem.ActorOf(
-                                Props.Create<PaymentProcessorActor>("fallback", fallbackProcessor)
+                                Props.Create<PaymentProcessorActor>("fallback", serviceProvider, fallbackProcessor)
                                     .WithRouter(new SmallestMailboxPool(nrOfInstances: 5)), name: "fallback-pool");
 
                             var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
                             var paymentRoutingPool = actorSystem.ActorOf(
                                 Props.Create<PaymentRoutingActor>(healthMonitor, defaultPool, fallbackPool)
                                     .WithRouter(new SmallestMailboxPool(nrOfInstances: 50)), name: "routing-pool");
+
+                            defaultPool.Tell(paymentRoutingPool);
+                            fallbackPool.Tell(paymentRoutingPool);
 
                             actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);
                         });

@@ -9,7 +9,7 @@ namespace MinimalArchitecture.Template.Domain.Requests
             {
                 Amount = Amount,
                 CorrelationId = CorrelationId,
-                ReceivedAtUtc = DateTimeOffset.UtcNow
+                RequestedAt = DateTimeOffset.UtcNow
             };
     }
 }

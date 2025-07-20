@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using MinimalArchitecture.Template.Domain.Events;
 using MinimalArchitecture.Template.Domain.Models;
 using MinimalArchitecture.Template.Domain.Services;
+using MinimalArchitecture.Template.Domain.Utils;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -43,30 +45,27 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
             }
         }
 
-        public async Task<bool> ProcessAsync(
-            Guid correlationId, decimal amount,
-            DateTimeOffset requestedAt, CancellationToken cancellationToken = default)
+        public async Task<Result<PaymentReceivedEvent>> ProcessAsync(
+            PaymentReceivedEvent evt, CancellationToken cancellationToken = default)
         {
             try
             {
                 using var result = await HttpClient.PostAsJsonAsync(
-                    "/payments",
-                    new
-                    {
-                        correlationId,
-                        amount,
-                        requestedAt
-                    }, cancellationToken);
+                    "/payments", evt, s_serializerOptions, cancellationToken);
 
-                return result.IsSuccessStatusCode;
+                if (result.IsSuccessStatusCode)
+                    return Result<PaymentReceivedEvent>.Success(evt);
+
+                return Result<PaymentReceivedEvent>.Failure(evt);
             }
             catch
             {
-                return false;
+                return Result<PaymentReceivedEvent>.Failure(evt);
             }
         }
     }
 
+    [JsonSerializable(typeof(PaymentReceivedEvent))]
     [JsonSerializable(typeof(ProcessorHealthModel))]
     internal partial class InfraJsonSerializerContext : JsonSerializerContext
     {

@@ -4,12 +4,19 @@
     {
         public required Guid CorrelationId { get; init; }
         public required decimal Amount { get; init; }
-        public required DateTimeOffset ReceivedAtUtc { get; init; }
+        public required DateTimeOffset RequestedAt { get; init; }
         public int IntegrationAttempts { get; private set; } = 0;
+        public int ProcessingAttempts { get; private set; } = 0;
 
-        public PaymentReceivedEvent WithIncreasedAttempts()
+        public PaymentReceivedEvent IncrementIntegrationAttemps()
         {
             IntegrationAttempts++;
+            return this;
+        }
+
+        public PaymentReceivedEvent IncrementProcessingAttemps()
+        {
+            ProcessingAttempts++;
             return this;
         }
 

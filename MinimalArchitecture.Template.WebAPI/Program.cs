@@ -3,7 +3,6 @@ using Akka.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using MinimalArchitecture.Template.Application.Actors;
 using MinimalArchitecture.Template.Domain.Requests;
-using MinimalArchitecture.Template.IoC.Infrastructure;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 
@@ -24,6 +23,7 @@ namespace MinimalArchitecture.Template.WebAPI
                     .Insert(0, ApiJsonSerializerContext.Default);
             });
 
+            builder.Services.SetupApplication(config);
             builder.Services.SetupInfrastructure(config);
 
             var app = builder.Build();

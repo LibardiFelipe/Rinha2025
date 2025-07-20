@@ -2,11 +2,11 @@
 
 namespace MinimalArchitecture.Template.Application.Actors.Base
 {
-    public abstract class TimedActor<TNotificationContent> : ReceiveActor, IWithTimers
+    public abstract class NotifiableTickActor<TNotificationContent> : ReceiveActor, IWithTimers
     {
         private readonly List<IActorRef> _liteners = [];
 
-        protected TimedActor(TimeSpan tickInitialDelay, TimeSpan tickInterval)
+        protected NotifiableTickActor(TimeSpan tickInitialDelay, TimeSpan tickInterval)
         {
             Receive<NewListener>(listen =>
                 AddListener(Sender));
@@ -22,7 +22,7 @@ namespace MinimalArchitecture.Template.Application.Actors.Base
                 "tick", Tick.Instance, tickInitialDelay, tickInterval);
         }
 
-        protected TimedActor(TimeSpan tickInterval)
+        protected NotifiableTickActor(TimeSpan tickInterval)
             : this(TimeSpan.Zero, tickInterval)
         { }
 
@@ -51,7 +51,7 @@ namespace MinimalArchitecture.Template.Application.Actors.Base
             public static NewListener Instance => new();
         }
 
-        public sealed class Tick
+        private sealed class Tick
         {
             public Tick() { }
             public static Tick Instance => new();
