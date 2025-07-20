@@ -5,7 +5,6 @@ using MinimalArchitecture.Template.Domain.Services;
 using MinimalArchitecture.Template.Domain.Utils;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace MinimalArchitecture.Template.Infrastructure.Services
 {
@@ -25,6 +24,8 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
             HttpClient = httpClient;
             Logger = logger;
         }
+
+        protected abstract string ProcessorName { get; }
 
         public async Task<ProcessorHealthModel> GetHealthAsync(
             CancellationToken cancellationToken = default)
@@ -54,7 +55,10 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
                     "/payments", evt, s_serializerOptions, cancellationToken);
 
                 if (result.IsSuccessStatusCode)
-                    return Result<PaymentReceivedEvent>.Success(evt);
+                {
+                    return Result<PaymentReceivedEvent>.Success(
+                        evt.UpdateProcessedBy(ProcessorName));
+                }
 
                 return Result<PaymentReceivedEvent>.Failure(evt);
             }
@@ -63,11 +67,5 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
                 return Result<PaymentReceivedEvent>.Failure(evt);
             }
         }
-    }
-
-    [JsonSerializable(typeof(PaymentReceivedEvent))]
-    [JsonSerializable(typeof(ProcessorHealthModel))]
-    internal partial class InfraJsonSerializerContext : JsonSerializerContext
-    {
     }
 }

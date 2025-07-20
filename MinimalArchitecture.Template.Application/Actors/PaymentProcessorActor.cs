@@ -11,17 +11,16 @@ namespace MinimalArchitecture.Template.Application.Actors
 {
     public sealed class PaymentProcessorActor : ReceiveActor
     {
-        private readonly string _processorName;
         private IActorRef? _routingActor;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentProcessorService _paymentProcessor;
 
+        private const int MAX_PROCESSING_ATTEMPTS = 5;
+
         public PaymentProcessorActor(
-            string processorName,
             IServiceProvider serviceProvider,
             IPaymentProcessorService paymentProcessor)
         {
-            _processorName = processorName;
             _paymentProcessor = paymentProcessor;
 
             using var scope = serviceProvider.CreateScope();
@@ -37,7 +36,17 @@ namespace MinimalArchitecture.Template.Application.Actors
             {
                 /* Se falhou, lança novamente para o routing */
                 if (!result.IsSuccess && result.Content is not null)
-                    _routingActor.Tell(result.Content.IncrementProcessingAttemps());
+                {
+                    var entry = result.Content;
+                    if (entry.ProcessingAttempts >= MAX_PROCESSING_ATTEMPTS)
+                    {
+                        Context.System.DeadLetters.Tell(entry, Self);
+                        return;
+                    }
+
+                    _routingActor.Tell(
+                        Result<PaymentReceivedEvent>.Failure(entry.IncrementProcessingAttemps()));
+                }
             });
         }
 
@@ -54,11 +63,13 @@ namespace MinimalArchitecture.Template.Application.Actors
                 onFailureMessage: ex => Result<PaymentReceivedEvent>.Failure(content: null));
 
             mainSource
-                .SelectAsyncUnordered(
-                    parallelism: 50, evt => _paymentProcessor.ProcessAsync(evt, CancellationToken.None))
-                .DivertTo(failureSink, result => !result.IsSuccess)
-                .GroupedWithin(100, TimeSpan.FromMilliseconds(10))
-                .SelectAsync(20, evt => _paymentRepository.InserBatchAsync(evt.Select(e => e.Content)!))
+                .SelectAsyncUnordered(parallelism: 50, evt =>
+                    _paymentProcessor.ProcessAsync(evt))
+                .DivertTo(failureSink, result =>
+                    !result.IsSuccess)
+                .GroupedWithin(n: 100, TimeSpan.FromMilliseconds(100))
+                .SelectAsync(parallelism: 20, evt =>
+                    _paymentRepository.InserBatchAsync(evt.Select(e => e.Content)!))
                 .To(Sink.Ignore<IEnumerable<PaymentReceivedEvent>>()) // TODO: Tratar problemas no insert?
                 .Run(materializer);
 

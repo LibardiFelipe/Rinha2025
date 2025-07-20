@@ -10,5 +10,7 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
             : base(httpClient, logger)
         {
         }
+
+        protected override string ProcessorName => "fallback";
     }
 }

@@ -1,8 +1,11 @@
 ﻿using Akka.Actor;
 using Akka.Cluster.Hosting;
+using Akka.HealthCheck.Hosting;
+using Akka.HealthCheck.Hosting.Web;
 using Akka.Hosting;
 using Akka.Remote.Hosting;
 using Akka.Routing;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MinimalArchitecture.Template.Application.Actors;
@@ -18,6 +21,8 @@ namespace MinimalArchitecture.Template.IoC.Application
             this IServiceCollection services, IConfiguration config)
         {
             var akkaConfig = new AkkaConfig(config);
+
+            services.WithAkkaHealthCheck(HealthCheckType.All);
             services.AddAkka(akkaConfig.SystemName,
                 (configBuilder, provider) =>
                 {
@@ -37,11 +42,11 @@ namespace MinimalArchitecture.Template.IoC.Application
                             var serviceProvider = dependencyResolver.GetService<IServiceProvider>();
 
                             var defaultPool = actorSystem.ActorOf(
-                                Props.Create<PaymentProcessorActor>("default", serviceProvider, defaultProcessor)
+                                Props.Create<PaymentProcessorActor>(serviceProvider, defaultProcessor)
                                     .WithRouter(new SmallestMailboxPool(nrOfInstances: 5)), name: "default-pool");
 
                             var fallbackPool = actorSystem.ActorOf(
-                                Props.Create<PaymentProcessorActor>("fallback", serviceProvider, fallbackProcessor)
+                                Props.Create<PaymentProcessorActor>(serviceProvider, fallbackProcessor)
                                     .WithRouter(new SmallestMailboxPool(nrOfInstances: 5)), name: "fallback-pool");
 
                             var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
@@ -53,7 +58,8 @@ namespace MinimalArchitecture.Template.IoC.Application
                             fallbackPool.Tell(paymentRoutingPool);
 
                             actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);
-                        });
+                        })
+                        .WithWebHealthCheck(provider);
                 });
 
             return services;

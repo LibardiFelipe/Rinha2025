@@ -2,6 +2,7 @@
 using MinimalArchitecture.Template.Application.Actors.Base;
 using MinimalArchitecture.Template.Domain.Events;
 using MinimalArchitecture.Template.Domain.Messages;
+using MinimalArchitecture.Template.Domain.Utils;
 
 namespace MinimalArchitecture.Template.Application.Actors
 {
@@ -37,6 +38,16 @@ namespace MinimalArchitecture.Template.Application.Actors
                 }
 
                 _bestProcessorPool.Tell(evt);
+            });
+
+            Receive<Result<PaymentReceivedEvent>>(result =>
+            {
+                if (!result.IsSuccess && result.Content is not null)
+                {
+                    var evt = result.Content;
+                    _retryQueue ??= [];
+                    _retryQueue.Enqueue(evt);
+                }
             });
         }
 
