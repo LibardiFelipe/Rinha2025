@@ -4,7 +4,6 @@ using MinimalArchitecture.Template.Domain.Models;
 using MinimalArchitecture.Template.Domain.Services;
 using MinimalArchitecture.Template.Domain.Utils;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace MinimalArchitecture.Template.Infrastructure.Services
 {
@@ -12,11 +11,6 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
     {
         protected readonly HttpClient HttpClient;
         protected readonly ILogger<BasePaymentProcessorService> Logger;
-
-        private static readonly JsonSerializerOptions s_serializerOptions = new()
-        {
-            TypeInfoResolver = InfraJsonSerializerContext.Default
-        };
 
         protected BasePaymentProcessorService(
             HttpClient httpClient, ILogger<BasePaymentProcessorService> logger)
@@ -33,7 +27,7 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
             try
             {
                 var result = await HttpClient.GetFromJsonAsync<ProcessorHealthModel>(
-                    "/payments/service-health", s_serializerOptions, cancellationToken);
+                    "/payments/service-health", cancellationToken);
 
                 if (result is not null)
                     return result;
@@ -52,7 +46,7 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
             try
             {
                 using var result = await HttpClient.PostAsJsonAsync(
-                    "/payments", evt, s_serializerOptions, cancellationToken);
+                    "/payments", evt, cancellationToken);
 
                 if (result.IsSuccessStatusCode)
                 {

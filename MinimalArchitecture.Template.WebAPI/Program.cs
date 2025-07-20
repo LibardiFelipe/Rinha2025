@@ -2,8 +2,6 @@ using Akka.Actor;
 using Akka.HealthCheck.Hosting.Web;
 using Akka.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Http;
 using MinimalArchitecture.Template.Application.Actors;
 using MinimalArchitecture.Template.Domain.Repositories;
 using MinimalArchitecture.Template.Domain.Requests;
@@ -23,13 +21,6 @@ namespace MinimalArchitecture.Template.WebAPI
             var config = builder.Configuration;
 
             builder.Services.AddOpenApi();
-            builder.Services.ConfigureHttpJsonOptions(options =>
-            {
-                options.SerializerOptions
-                    .TypeInfoResolverChain
-                    .Insert(0, ApiJsonSerializerContext.Default);
-            });
-
             builder.Services.AddHealthChecks();
             builder.Services.SetupApplication(config);
             builder.Services.SetupInfrastructure(config);
@@ -56,16 +47,18 @@ namespace MinimalArchitecture.Template.WebAPI
             {
                 var payments = await paymentRepository.GetAsync(from, to);
 
-                var summary = payments
-                    .GroupBy(p => p.ProcessedBy)
-                    .ToDictionary(
-                        grouping => grouping.Key,
-                        grouping => new SummaryReadModel(
-                            TotalRequests: grouping.Count(),
-                            TotalAmount: grouping.Sum(payment => payment.Amount)
-                        ));
+                var defaultPayments = payments
+                    .Where(p => p.ProcessedBy == "default").ToArray();
+                var fabllbackPayments = payments
+                    .Where(p => p.ProcessedBy == "fallback").ToArray();
 
-                return Results.Ok(summary);
+                return Results.Ok(new
+                {
+                    Default = new SummaryReadModel(
+                        defaultPayments.Length, defaultPayments.Sum(p => p.Amount)),
+                    Fallback = new SummaryReadModel(
+                        fabllbackPayments.Length, fabllbackPayments.Sum(p => p.Amount))
+                });
             });
 
             app.MapPost("/purge-payments", async (

@@ -14,11 +14,11 @@ services:
     networks:
       - backend
       - payment-processor
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.1"
-    #       memory: "6MB"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: "50MB"
 
   payment-api-1: &api
     #image: libardi/rinha-backend-2025-payment-api:latest # <-- TODO: ALTERAR PELA IMAGEM PÚBLICA
@@ -29,7 +29,8 @@ services:
       dockerfile: MinimalArchitecture.Template.WebAPI/Dockerfile
     environment: &env
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__Postgres: "server=postgres; database=PaymentsDB; user id=user; password=password;"
+      ConnectionStrings__Postgres:
+        "server=postgres; database=PaymentsDB; user id=user; password=password; pooling=true; maximum pool size=256; multiplexing=true; no reset on close=true; max auto prepare=50; auto prepare min usages=1;"
       Akka__SystemName: "actorSystem"
       Akka__ClusterOptions__SeedNodes__0: "akka.tcp://actorSystem@payment-api-1:8110"
       Akka__ClusterOptions__Roles__0: "actorSystem"
@@ -51,11 +52,11 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '0.4'
-    #       memory: '85MB'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '100MB'
 
   payment-api-2:
     <<: *api
@@ -69,6 +70,17 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: payment-db
+    command: >-
+      postgres -c max_connections=400
+               -c shared_buffers=512MB
+               -c synchronous_commit=off
+               -c fsync=off
+               -c full_page_writes=off
+               -c wal_level=minimal
+               -c max_wal_senders=0
+               -c max_wal_size=4GB
+               -c checkpoint_timeout=30min
+               -c log_min_duration_statement=0
     environment:
       POSTGRES_DB: PaymentsDB
       POSTGRES_USER: user
@@ -85,11 +97,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.15"
-    #       memory: "50MB"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "100MB"
 
 networks:
   backend:

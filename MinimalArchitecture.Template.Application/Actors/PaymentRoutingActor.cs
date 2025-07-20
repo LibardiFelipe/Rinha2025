@@ -14,7 +14,7 @@ namespace MinimalArchitecture.Template.Application.Actors
         private IActorRef? _bestProcessorPool;
 
         private const int MAX_INTEGRATION_ATTEMPTS = 5;
-        private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(5);
         private Queue<PaymentReceivedEvent>? _retryQueue;
 
         public PaymentRoutingActor(

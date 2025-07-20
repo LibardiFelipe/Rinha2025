@@ -51,9 +51,6 @@ namespace MinimalArchitecture.Template.IoC.Application
                                 Props.Create<PaymentRoutingActor>(healthMonitor, defaultPool, fallbackPool)
                                     .WithRouter(new SmallestMailboxPool(nrOfInstances: 50)), name: "routing-pool");
 
-                            defaultPool.Tell(paymentRoutingPool);
-                            fallbackPool.Tell(paymentRoutingPool);
-
                             actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);
                         })
                         .WithWebHealthCheck(provider);

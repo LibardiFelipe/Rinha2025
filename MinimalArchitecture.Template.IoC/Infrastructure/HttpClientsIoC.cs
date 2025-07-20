@@ -23,7 +23,8 @@ namespace MinimalArchitecture.Template.IoC.Infrastructure
                     client.Timeout = TimeSpan.FromSeconds(15);
                 })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                .AddPolicyHandler(RetryPolicy);
+                .AddPolicyHandler(RetryPolicy)
+                .AddPolicyHandler(CircuitBreakerPolicy);
 
             services.AddHttpClient<IFallbackPaymentProcessorService, FallbackPaymentProcessorService>(
                 client =>
@@ -32,7 +33,8 @@ namespace MinimalArchitecture.Template.IoC.Infrastructure
                     client.Timeout = TimeSpan.FromSeconds(30);
                 })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                .AddPolicyHandler(RetryPolicy);
+                .AddPolicyHandler(RetryPolicy)
+                .AddPolicyHandler(CircuitBreakerPolicy);
 
             return services;
         }
@@ -52,5 +54,14 @@ namespace MinimalArchitecture.Template.IoC.Infrastructure
                     .WaitAndRetryAsync(backoffDelay);
             }
         }
+
+        private static IAsyncPolicy<HttpResponseMessage> CircuitBreakerPolicy => HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+                .AdvancedCircuitBreakerAsync(
+                    failureThreshold: 0.2, // 20% de falha
+                    samplingDuration: TimeSpan.FromSeconds(3), // Em 3 segundos
+                    minimumThroughput: 20,
+                    durationOfBreak: TimeSpan.FromSeconds(5)); // Fecha o circuito por 5s
     }
 }

@@ -14,9 +14,6 @@ WORKDIR /app
 EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    clang zlib1g-dev
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["MinimalArchitecture.Template.WebAPI/MinimalArchitecture.Template.WebAPI.csproj", "MinimalArchitecture.Template.WebAPI/"]
@@ -33,14 +30,7 @@ FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./MinimalArchitecture.Template.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
 
-FROM base AS aotdebug
-USER root
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    gdb
-USER app
-
-FROM ${FINAL_BASE_IMAGE:-mcr.microsoft.com/dotnet/runtime-deps:9.0} AS final
+FROM base AS final
 WORKDIR /app
 EXPOSE 8080
 COPY --from=publish /app/publish .

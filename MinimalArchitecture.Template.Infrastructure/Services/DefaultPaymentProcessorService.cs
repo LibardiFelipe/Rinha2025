@@ -6,7 +6,8 @@ namespace MinimalArchitecture.Template.Infrastructure.Services
     public sealed class DefaultPaymentProcessorService
         : BasePaymentProcessorService, IDefaultPaymentProcessorService
     {
-        public DefaultPaymentProcessorService(HttpClient httpClient, ILogger<DefaultPaymentProcessorService> logger)
+        public DefaultPaymentProcessorService(
+            HttpClient httpClient, ILogger<DefaultPaymentProcessorService> logger)
             : base(httpClient, logger)
         {
         }
