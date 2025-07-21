@@ -12,11 +12,11 @@ namespace MinimalArchitecture.Template.Infrastructure.Extensions
             var paymentRepository = scope.ServiceProvider
                 .GetRequiredService<IPaymentRepository>();
 
-            for (var i = 0; i < 5; i++)
+            await Task.WhenAll(Enumerable.Range(0, 5).Select(async _ =>
             {
                 await paymentRepository.GetProcessorsSummaryAsync(
                     from: null, to: null);
-            }
+            }));
 
             return host;
         }
