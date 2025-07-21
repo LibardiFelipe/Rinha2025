@@ -67,12 +67,12 @@ namespace MinimalArchitecture.Template.Application.Actors
                 onFailureMessage: ex => Result<PaymentReceivedEvent>.Failure(content: null));
 
             mainSource
-                .SelectAsyncUnordered(parallelism: 50, evt =>
+                .SelectAsyncUnordered(parallelism: 8, evt =>
                     _paymentProcessor.ProcessAsync(evt))
                 .DivertTo(failureSink, result =>
                     !result.IsSuccess)
-                .GroupedWithin(n: 100, TimeSpan.FromMilliseconds(20))
-                .SelectAsync(parallelism: 8, evt =>
+                .GroupedWithin(n: 50, TimeSpan.FromMilliseconds(100))
+                .SelectAsync(parallelism: 5, evt =>
                     _paymentRepository.InserBatchAsync(evt.Select(e => e.Content)!))
                 .To(Sink.Ignore<IEnumerable<PaymentReceivedEvent>>()) // TODO: Tratar problemas no insert?
                 .Run(materializer);

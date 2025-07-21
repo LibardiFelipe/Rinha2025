@@ -14,11 +14,11 @@ services:
     networks:
       - backend
       - payment-processor
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.1"
-    #       memory: "6MB"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: "10MB"
 
   payment-api-1: &api
     #image: libardi/rinha-backend-2025-payment-api:latest           # <-- TODO: ALTERAR PELA IMAGEM PÚBLICA
@@ -53,11 +53,11 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '0.5'
-    #       memory: '72MB'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.55'
+          memory: '120MB'
 
   payment-api-2:
     <<: *api
@@ -98,11 +98,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.4"
-    #       memory: "150MB"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "100MB"
 
 networks:
   backend:
