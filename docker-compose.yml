@@ -11,6 +11,8 @@ services:
         condition: service_healthy
       payment-api-2:
         condition: service_healthy
+    healthcheck:
+      start_period: 15s
     networks:
       - backend
       - payment-processor
@@ -18,15 +20,15 @@ services:
       resources:
         limits:
           cpus: "0.1"
-          memory: "50MB"
+          memory: "10MB"
 
   payment-api-1: &api
-    #image: libardi/rinha-backend-2025-payment-api:latest # <-- TODO: ALTERAR PELA IMAGEM PÚBLICA
+    #image: libardi/rinha-backend-2025-payment-api:latest           # <-- TODO: ALTERAR PELA IMAGEM PÚBLICA
     container_name: payment-api-1
     hostname: payment-api-1
-    build:
-      context: .
-      dockerfile: MinimalArchitecture.Template.WebAPI/Dockerfile
+    build:                                                          # <-- TODO: Comentar para enviar
+      context: .                                                    # <-- TODO: Comentar para enviar
+      dockerfile: MinimalArchitecture.Template.WebAPI/Dockerfile    # <-- TODO: Comentar para enviar
     environment: &env
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Postgres:
@@ -56,7 +58,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: '100MB'
+          memory: '120MB'
 
   payment-api-2:
     <<: *api
@@ -86,7 +88,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - backend
     ports:
@@ -108,6 +110,3 @@ networks:
     driver: bridge
   payment-processor:
     external: true
-
-volumes:
-  pgdata:

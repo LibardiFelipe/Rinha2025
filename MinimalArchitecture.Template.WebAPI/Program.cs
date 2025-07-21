@@ -71,8 +71,9 @@ namespace MinimalArchitecture.Template.WebAPI
             app.MapHealthChecks("/healthz");
             app.MapAkkaHealthCheckRoutes();
 
-            await app.MigrateAsync();
-            await app.PurgePaymentsAsync();
+            if (app.Environment.IsDevelopment())
+                await app.PurgePaymentsAsync();
+
             await app.RunAsync();
         }
     }

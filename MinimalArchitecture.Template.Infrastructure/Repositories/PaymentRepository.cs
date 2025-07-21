@@ -23,26 +23,20 @@ namespace MinimalArchitecture.Template.Infrastructure.Repositories
 
             const string sql = @"
                 COPY payments (
-                    id,
                     correlation_id,
                     amount,
                     processed_by,
-                    requested_at_utc,
-                    integration_attempts,
-                    processing_attempts)
+                    requested_at_utc)
                 FROM STDIN (FORMAT BINARY)";
 
             await using var writer = await conn.BeginBinaryImportAsync(sql);
             foreach (var payment in events)
             {
                 await writer.StartRowAsync();
-                await writer.WriteAsync(Guid.CreateVersion7());
                 await writer.WriteAsync(payment.CorrelationId);
                 await writer.WriteAsync(payment.Amount);
                 await writer.WriteAsync(payment.ProcessedBy);
                 await writer.WriteAsync(payment.RequestedAt);
-                await writer.WriteAsync(payment.IntegrationAttempts);
-                await writer.WriteAsync(payment.ProcessingAttempts);
             }
 
             await writer.CompleteAsync();

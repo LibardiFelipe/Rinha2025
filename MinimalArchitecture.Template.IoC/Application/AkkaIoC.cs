@@ -40,16 +40,16 @@ namespace MinimalArchitecture.Template.IoC.Application
 
                             var defaultPool = actorSystem.ActorOf(
                                 Props.Create<PaymentProcessorActor>(serviceProvider, defaultProcessor)
-                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 5)), name: "default-pool");
+                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 8)), name: "default-pool");
 
                             var fallbackPool = actorSystem.ActorOf(
                                 Props.Create<PaymentProcessorActor>(serviceProvider, fallbackProcessor)
-                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 5)), name: "fallback-pool");
+                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 8)), name: "fallback-pool");
 
                             var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
                             var paymentRoutingPool = actorSystem.ActorOf(
                                 Props.Create<PaymentRoutingActor>(healthMonitor, defaultPool, fallbackPool)
-                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 50)), name: "routing-pool");
+                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 80)), name: "routing-pool");
 
                             actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);
                         })

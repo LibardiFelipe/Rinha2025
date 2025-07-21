@@ -71,7 +71,7 @@ namespace MinimalArchitecture.Template.Application.Actors
                     _paymentProcessor.ProcessAsync(evt))
                 .DivertTo(failureSink, result =>
                     !result.IsSuccess)
-                .GroupedWithin(n: 100, TimeSpan.FromMilliseconds(20))
+                .GroupedWithin(n: 100, TimeSpan.FromMilliseconds(50))
                 .SelectAsync(parallelism: 25, evt =>
                     _paymentRepository.InserBatchAsync(evt.Select(e => e.Content)!))
                 .To(Sink.Ignore<IEnumerable<PaymentReceivedEvent>>()) // TODO: Tratar problemas no insert?
