@@ -23,6 +23,9 @@ namespace MinimalArchitecture.Template.IoC.Application
             services.AddAkka(akkaConfig.SystemName,
                 (configBuilder, provider) =>
                 {
+                    const int poolSize = 16;
+                    const int routingPoolSize = 8;
+
                     configBuilder
                         .WithClustering(akkaConfig.ClusterOptions)
                         .WithRemoting(akkaConfig.RemoteOptions)
@@ -40,16 +43,16 @@ namespace MinimalArchitecture.Template.IoC.Application
 
                             var defaultPool = actorSystem.ActorOf(
                                 Props.Create<PaymentProcessorActor>(serviceProvider, defaultProcessor)
-                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 8)), name: "default-pool");
+                                    .WithRouter(new SmallestMailboxPool(poolSize)), name: "default-pool");
 
                             var fallbackPool = actorSystem.ActorOf(
                                 Props.Create<PaymentProcessorActor>(serviceProvider, fallbackProcessor)
-                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 8)), name: "fallback-pool");
+                                    .WithRouter(new SmallestMailboxPool(poolSize)), name: "fallback-pool");
 
                             var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
                             var paymentRoutingPool = actorSystem.ActorOf(
                                 Props.Create<PaymentRoutingActor>(healthMonitor, defaultPool, fallbackPool)
-                                    .WithRouter(new SmallestMailboxPool(nrOfInstances: 80)), name: "routing-pool");
+                                    .WithRouter(new SmallestMailboxPool(routingPoolSize)), name: "routing-pool");
 
                             actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);
                         })
