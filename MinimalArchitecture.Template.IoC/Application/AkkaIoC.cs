@@ -7,6 +7,7 @@ using Akka.Remote.Hosting;
 using Akka.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MinimalArchitecture.Template.Application.Actors;
 using MinimalArchitecture.Template.Application.Configs;
 using MinimalArchitecture.Template.Domain.Services;
@@ -49,9 +50,10 @@ namespace MinimalArchitecture.Template.IoC.Application
                                 Props.Create<PaymentProcessorActor>(serviceProvider, fallbackProcessor)
                                     .WithRouter(new SmallestMailboxPool(poolSize)), name: "fallback-pool");
 
+                            var logger = dependencyResolver.GetService<ILogger<PaymentRoutingActor>>();
                             var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
                             var paymentRoutingPool = actorSystem.ActorOf(
-                                Props.Create<PaymentRoutingActor>(healthMonitor, defaultPool, fallbackPool)
+                                Props.Create<PaymentRoutingActor>(logger, healthMonitor, defaultPool, fallbackPool)
                                     .WithRouter(new SmallestMailboxPool(routingPoolSize)), name: "routing-pool");
 
                             actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);

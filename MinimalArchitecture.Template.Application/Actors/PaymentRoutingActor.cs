@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using Microsoft.Extensions.Logging;
 using MinimalArchitecture.Template.Application.Actors.Base;
 using MinimalArchitecture.Template.Domain.Events;
 using MinimalArchitecture.Template.Domain.Messages;
@@ -8,19 +9,22 @@ namespace MinimalArchitecture.Template.Application.Actors
 {
     public sealed class PaymentRoutingActor : TickActor
     {
+        private readonly ILogger<PaymentRoutingActor> _logger;
         private readonly IActorRef _healthMonitorActor;
         private readonly IActorRef _defaultProcessorPool;
         private readonly IActorRef _fallbackProcessorPool;
         private IActorRef? _bestProcessorPool;
 
         private const int MAX_INTEGRATION_ATTEMPTS = 5;
-        private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(10);
         private Queue<PaymentReceivedEvent>? _retryQueue;
 
         public PaymentRoutingActor(
+            ILogger<PaymentRoutingActor> logger,
             IActorRef healthMonitorActor, IActorRef defaultProcessorPool, IActorRef fallbackProcessorPool)
             : base(tickInitialDelay: s_retryInterval, tickInterval: s_retryInterval)
         {
+            _logger = logger;
             _healthMonitorActor = healthMonitorActor;
             _defaultProcessorPool = defaultProcessorPool;
             _fallbackProcessorPool = fallbackProcessorPool;
@@ -80,11 +84,18 @@ namespace MinimalArchitecture.Template.Application.Actors
             var defaultHealth = evt.DefaultHealth;
             var fallbackHealth = evt.FallbackHealth;
 
-            if (defaultHealth.IsFailing && fallbackHealth.IsFailing)
-                return null;
+            const int MAX_TOLERABLE_LATENCY_MS = 250;
 
-            if (defaultHealth.IsFailing)
+            _logger.LogError("DefaultMinResponseTime: {Time}", defaultHealth.MinResponseTime);
+            _logger.LogError("FallbackMinResponseTime: {Time}", fallbackHealth.MinResponseTime);
+
+            if (defaultHealth.IsFailing || defaultHealth.MinResponseTime > MAX_TOLERABLE_LATENCY_MS)
+            {
+                if (fallbackHealth.IsFailing)
+                    return null;
+
                 return _fallbackProcessorPool;
+            }
 
             var fallbackResponseWithOffset = fallbackHealth.MinResponseTime + 150;
             if (defaultHealth.MinResponseTime > fallbackResponseWithOffset)
