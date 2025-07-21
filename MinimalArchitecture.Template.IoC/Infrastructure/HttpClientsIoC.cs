@@ -62,6 +62,6 @@ namespace MinimalArchitecture.Template.IoC.Infrastructure
                     failureThreshold: 0.15,
                     samplingDuration: TimeSpan.FromSeconds(2),
                     minimumThroughput: 20,
-                    durationOfBreak: TimeSpan.FromSeconds(3));
+                    durationOfBreak: TimeSpan.FromSeconds(5));
     }
 }

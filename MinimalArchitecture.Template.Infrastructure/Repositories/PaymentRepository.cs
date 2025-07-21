@@ -1,5 +1,4 @@
 ﻿using Dapper;
-using MinimalArchitecture.Template.Domain.Entities;
 using MinimalArchitecture.Template.Domain.Events;
 using MinimalArchitecture.Template.Domain.Repositories;
 using Npgsql;
@@ -43,20 +42,21 @@ namespace MinimalArchitecture.Template.Infrastructure.Repositories
             return events;
         }
 
-        public async ValueTask<IEnumerable<Payment>> GetAsync(DateTimeOffset? from, DateTimeOffset? to)
+        public async ValueTask<IEnumerable<SummaryRowReadModel>> GetProcessorsSummaryAsync(
+            DateTimeOffset? from, DateTimeOffset? to)
         {
             await using var conn = new NpgsqlConnection(_connString);
             await conn.OpenAsync();
 
             const string sql = @"
-                SELECT *
+                SELECT processed_by AS ProcessedBy, COUNT(*) AS TotalRequests, SUM(amount) AS TotalAmount
                 FROM payments
                 WHERE (@from IS NULL OR requested_at_utc >= @from)
-                AND (@to IS NULL OR requested_at_utc <= @to);
+                  AND (@to IS NULL OR requested_at_utc <= @to)
+                GROUP BY processed_by;
             ";
 
-            return await conn.QueryAsync<Payment>(sql,
-                new { from, to });
+            return await conn.QueryAsync<SummaryRowReadModel>(sql, new { from, to });
         }
 
         public async ValueTask PurgeAsync()

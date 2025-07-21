@@ -11,16 +11,14 @@ services:
         condition: service_healthy
       payment-api-2:
         condition: service_healthy
-    healthcheck:
-      start_period: 15s
     networks:
       - backend
       - payment-processor
-    deploy:
-      resources:
-        limits:
-          cpus: "0.1"
-          memory: "10MB"
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.1"
+    #       memory: "6MB"
 
   payment-api-1: &api
     #image: libardi/rinha-backend-2025-payment-api:latest           # <-- TODO: ALTERAR PELA IMAGEM PÚBLICA
@@ -54,11 +52,12 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '0.45'
-          memory: '100MB'
+      start_period: 60s
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '0.5'
+    #       memory: '72MB'
 
   payment-api-2:
     <<: *api
@@ -99,11 +98,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: "140MB"
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.4"
+    #       memory: "150MB"
 
 networks:
   backend:

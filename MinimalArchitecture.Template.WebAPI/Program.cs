@@ -10,11 +10,11 @@ using Scalar.AspNetCore;
 
 namespace MinimalArchitecture.Template.WebAPI
 {
-    public sealed record SummaryReadModel(
-        long TotalRequests, decimal TotalAmount);
-
     public static class Program
     {
+        public sealed record SummaryReadModel(
+            long TotalRequests, decimal TotalAmount);
+
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
@@ -45,19 +45,19 @@ namespace MinimalArchitecture.Template.WebAPI
                 [FromServices] IPaymentRepository paymentRepository,
                 [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to) =>
             {
-                var payments = await paymentRepository.GetAsync(from, to);
+                var payments = await paymentRepository.GetProcessorsSummaryAsync(from, to);
 
-                var defaultPayments = payments
-                    .Where(p => p.ProcessedBy == "default").ToArray();
-                var fabllbackPayments = payments
-                    .Where(p => p.ProcessedBy == "fallback").ToArray();
+                var defaultPayment = payments
+                    .FirstOrDefault(p => p.ProcessedBy == "default") ?? new SummaryRowReadModel();
+                var fabllbackPayment = payments
+                    .FirstOrDefault(p => p.ProcessedBy == "fallback") ?? new SummaryRowReadModel();
 
                 return Results.Ok(new
                 {
                     Default = new SummaryReadModel(
-                        defaultPayments.Length, defaultPayments.Sum(p => p.Amount)),
+                        defaultPayment.TotalRequests, defaultPayment.TotalAmount),
                     Fallback = new SummaryReadModel(
-                        fabllbackPayments.Length, fabllbackPayments.Sum(p => p.Amount))
+                        fabllbackPayment.TotalRequests, fabllbackPayment.TotalAmount)
                 });
             });
 
@@ -74,6 +74,7 @@ namespace MinimalArchitecture.Template.WebAPI
             if (app.Environment.IsDevelopment())
                 await app.PurgePaymentsAsync();
 
+            await app.TestAsync();
             await app.RunAsync();
         }
     }

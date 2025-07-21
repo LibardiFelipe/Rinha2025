@@ -15,8 +15,8 @@ namespace MinimalArchitecture.Template.Application.Actors
         private readonly IActorRef _fallbackProcessorPool;
         private IActorRef? _bestProcessorPool;
 
-        private const int MAX_INTEGRATION_ATTEMPTS = 5;
-        private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(10);
+        private const int MAX_INTEGRATION_ATTEMPTS = 15;
+        private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(5);
         private Queue<PaymentReceivedEvent>? _retryQueue;
 
         public PaymentRoutingActor(
@@ -84,21 +84,14 @@ namespace MinimalArchitecture.Template.Application.Actors
             var defaultHealth = evt.DefaultHealth;
             var fallbackHealth = evt.FallbackHealth;
 
-            const int MAX_TOLERABLE_LATENCY_MS = 250;
+            if (defaultHealth.IsFailing && fallbackHealth.IsFailing)
+                return null;
 
-            _logger.LogError("DefaultMinResponseTime: {Time}", defaultHealth.MinResponseTime);
-            _logger.LogError("FallbackMinResponseTime: {Time}", fallbackHealth.MinResponseTime);
-
-            if (defaultHealth.IsFailing || defaultHealth.MinResponseTime > MAX_TOLERABLE_LATENCY_MS)
-            {
-                if (fallbackHealth.IsFailing)
-                    return null;
-
+            if (defaultHealth.IsFailing)
                 return _fallbackProcessorPool;
-            }
 
-            var fallbackResponseWithOffset = fallbackHealth.MinResponseTime + 150;
-            if (defaultHealth.MinResponseTime > fallbackResponseWithOffset)
+            const int offset = 100;
+            if (defaultHealth.MinResponseTime > fallbackHealth.MinResponseTime + offset)
                 return _fallbackProcessorPool;
 
             return _defaultProcessorPool;

@@ -6,6 +6,21 @@ namespace MinimalArchitecture.Template.Infrastructure.Extensions
 {
     public static class DbExtensions
     {
+        public static async Task<IHost> TestAsync(this IHost host)
+        {
+            using var scope = host.Services.CreateScope();
+            var paymentRepository = scope.ServiceProvider
+                .GetRequiredService<IPaymentRepository>();
+
+            for (var i = 0; i < 5; i++)
+            {
+                await paymentRepository.GetProcessorsSummaryAsync(
+                    from: null, to: null);
+            }
+
+            return host;
+        }
+
         public static async Task<IHost> PurgePaymentsAsync(this IHost host)
         {
             using var scope = host.Services.CreateScope();
