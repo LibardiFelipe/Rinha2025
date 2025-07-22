@@ -4,7 +4,7 @@
       "commandName": "DockerCompose",
       "commandVersion": "1.0",
       "serviceActions": {
-        "minimalarchitecture.template.webapi": "StartDebugging"
+        "Rinha2025.webapi": "StartDebugging"
       }
     }
   }

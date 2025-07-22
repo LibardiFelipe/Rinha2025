@@ -24,9 +24,9 @@ services:
     #image: libardi/rinha-backend-2025-payment-api:latest           # <-- TODO: ALTERAR PELA IMAGEM PÚBLICA
     container_name: payment-api-1
     hostname: payment-api-1
-    build:                                                          # <-- TODO: Comentar para enviar
-      context: .                                                    # <-- TODO: Comentar para enviar
-      dockerfile: MinimalArchitecture.Template.WebAPI/Dockerfile    # <-- TODO: Comentar para enviar
+    build:
+      context: .
+      dockerfile: Rinha2025.WebAPI/Dockerfile
     environment: &env
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__Postgres:
