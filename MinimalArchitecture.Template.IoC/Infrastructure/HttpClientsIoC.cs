@@ -59,9 +59,9 @@ namespace MinimalArchitecture.Template.IoC.Infrastructure
                 .HandleTransientHttpError()
                 .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
                 .AdvancedCircuitBreakerAsync(
-                    failureThreshold: 0.15,
-                    samplingDuration: TimeSpan.FromSeconds(2),
+                    failureThreshold: 0.25,
+                    samplingDuration: TimeSpan.FromSeconds(3),
                     minimumThroughput: 20,
-                    durationOfBreak: TimeSpan.FromSeconds(5));
+                    durationOfBreak: TimeSpan.FromMilliseconds(3));
     }
 }

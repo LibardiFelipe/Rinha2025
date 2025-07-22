@@ -15,7 +15,7 @@ namespace MinimalArchitecture.Template.Application.Actors
         private readonly IActorRef _fallbackProcessorPool;
         private IActorRef? _bestProcessorPool;
 
-        private const int MAX_INTEGRATION_ATTEMPTS = 15;
+        private const int MAX_INTEGRATION_ATTEMPTS = 50;
         private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(5);
         private Queue<PaymentReceivedEvent>? _retryQueue;
 

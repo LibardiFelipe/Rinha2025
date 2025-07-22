@@ -15,7 +15,7 @@ namespace MinimalArchitecture.Template.Application.Actors
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentProcessorService _paymentProcessor;
 
-        private const int MAX_PROCESSING_ATTEMPTS = 15;
+        private const int MAX_PROCESSING_ATTEMPTS = 50;
 
         public PaymentProcessorActor(
             IServiceProvider serviceProvider,
@@ -71,8 +71,8 @@ namespace MinimalArchitecture.Template.Application.Actors
                     _paymentProcessor.ProcessAsync(evt))
                 .DivertTo(failureSink, result =>
                     !result.IsSuccess)
-                .GroupedWithin(n: 50, TimeSpan.FromMilliseconds(100))
-                .SelectAsync(parallelism: 5, evt =>
+                .GroupedWithin(n: 200, TimeSpan.FromMilliseconds(20))
+                .SelectAsync(parallelism: 25, evt =>
                     _paymentRepository.InserBatchAsync(evt.Select(e => e.Content)!))
                 .To(Sink.Ignore<IEnumerable<PaymentReceivedEvent>>()) // TODO: Tratar problemas no insert?
                 .Run(materializer);
