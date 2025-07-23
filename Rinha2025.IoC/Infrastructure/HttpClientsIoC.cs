@@ -20,21 +20,19 @@ namespace Rinha2025.IoC.Infrastructure
                 client =>
                 {
                     client.BaseAddress = new Uri(processorsConfig.Default.BaseUrl);
-                    client.Timeout = TimeSpan.FromSeconds(15);
+                    client.Timeout = TimeSpan.FromSeconds(10);
                 })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                .AddPolicyHandler(RetryPolicy)
-                .AddPolicyHandler(CircuitBreakerPolicy);
+                .AddPolicyHandler(RetryPolicy);
 
             services.AddHttpClient<IFallbackPaymentProcessorService, FallbackPaymentProcessorService>(
                 client =>
                 {
                     client.BaseAddress = new Uri(processorsConfig.Fallback.BaseUrl);
-                    client.Timeout = TimeSpan.FromSeconds(30);
+                    client.Timeout = TimeSpan.FromSeconds(15);
                 })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                .AddPolicyHandler(RetryPolicy)
-                .AddPolicyHandler(CircuitBreakerPolicy);
+                .AddPolicyHandler(RetryPolicy);
 
             return services;
         }
@@ -43,8 +41,7 @@ namespace Rinha2025.IoC.Infrastructure
         {
             get
             {
-                var backoffDelay = Backoff
-                    .DecorrelatedJitterBackoffV2(
+                var backoffDelay = Backoff.DecorrelatedJitterBackoffV2(
                     medianFirstRetryDelay: TimeSpan.FromSeconds(1),
                     retryCount: 3);
 
@@ -62,6 +59,6 @@ namespace Rinha2025.IoC.Infrastructure
                     failureThreshold: 0.25,
                     samplingDuration: TimeSpan.FromSeconds(3),
                     minimumThroughput: 20,
-                    durationOfBreak: TimeSpan.FromMilliseconds(3));
+                    durationOfBreak: TimeSpan.FromMilliseconds(4));
     }
 }

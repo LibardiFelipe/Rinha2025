@@ -8,22 +8,21 @@ namespace Rinha2025.Application.Actors
 {
     public sealed class PaymentRoutingActor : TickActor
     {
-        private readonly ILogger<PaymentRoutingActor> _logger;
         private readonly IActorRef _healthMonitorActor;
         private readonly IActorRef _defaultProcessorPool;
         private readonly IActorRef _fallbackProcessorPool;
         private IActorRef? _bestProcessorPool;
 
-        private const int MAX_INTEGRATION_ATTEMPTS = 50;
+        private const int MAX_INTEGRATION_ATTEMPTS = 25;
         private static readonly TimeSpan s_retryInterval = TimeSpan.FromSeconds(5);
         private Queue<PaymentReceivedEvent>? _retryQueue;
 
         public PaymentRoutingActor(
-            ILogger<PaymentRoutingActor> logger,
-            IActorRef healthMonitorActor, IActorRef defaultProcessorPool, IActorRef fallbackProcessorPool)
+            IActorRef healthMonitorActor,
+            IActorRef defaultProcessorPool,
+            IActorRef fallbackProcessorPool)
             : base(tickInitialDelay: s_retryInterval, tickInterval: s_retryInterval)
         {
-            _logger = logger;
             _healthMonitorActor = healthMonitorActor;
             _defaultProcessorPool = defaultProcessorPool;
             _fallbackProcessorPool = fallbackProcessorPool;
@@ -87,10 +86,6 @@ namespace Rinha2025.Application.Actors
                 return null;
 
             if (defaultHealth.IsFailing)
-                return _fallbackProcessorPool;
-
-            const int offset = 100;
-            if (defaultHealth.MinResponseTime > fallbackHealth.MinResponseTime + offset)
                 return _fallbackProcessorPool;
 
             return _defaultProcessorPool;

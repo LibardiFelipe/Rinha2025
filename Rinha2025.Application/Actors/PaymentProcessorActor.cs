@@ -15,8 +15,6 @@ namespace Rinha2025.Application.Actors
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentProcessorService _paymentProcessor;
 
-        private const int MAX_PROCESSING_ATTEMPTS = 50;
-
         public PaymentProcessorActor(
             IServiceProvider serviceProvider,
             IPaymentProcessorService paymentProcessor)
@@ -31,18 +29,11 @@ namespace Rinha2025.Application.Actors
 
             Receive<Result<PaymentReceivedEvent>>(result =>
             {
-                /* Se falhou, lança novamente para o routing */
                 if (!result.IsSuccess && result.Content is not null)
                 {
                     var entry = result.Content;
-                    if (entry.ProcessingAttempts >= MAX_PROCESSING_ATTEMPTS)
-                    {
-                        Context.System.DeadLetters.Tell(entry, Self);
-                        return;
-                    }
-
                     _routingActor?.Tell(
-                        Result<PaymentReceivedEvent>.Failure(entry.IncrementProcessingAttemps()));
+                        Result<PaymentReceivedEvent>.Failure(entry));
                 }
             });
         }
@@ -50,7 +41,7 @@ namespace Rinha2025.Application.Actors
         protected override void PreStart()
         {
             _routingActor = Context.ActorSelection("/user/routing-pool")
-                .ResolveOne(TimeSpan.FromSeconds(60)).GetAwaiter().GetResult();
+                .ResolveOne(TimeSpan.FromMinutes(1)).Result;
             base.PreStart();
         }
 
@@ -67,12 +58,12 @@ namespace Rinha2025.Application.Actors
                 onFailureMessage: ex => Result<PaymentReceivedEvent>.Failure(content: null));
 
             mainSource
-                .SelectAsyncUnordered(parallelism: 8, evt =>
+                .SelectAsyncUnordered(parallelism: 16, evt =>
                     _paymentProcessor.ProcessAsync(evt))
                 .DivertTo(failureSink, result =>
                     !result.IsSuccess)
-                .GroupedWithin(n: 200, TimeSpan.FromMilliseconds(20))
-                .SelectAsync(parallelism: 25, evt =>
+                .GroupedWithin(n: 300, TimeSpan.FromMilliseconds(20))
+                .SelectAsync(parallelism: 20, evt =>
                     _paymentRepository.InserBatchAsync(evt.Select(e => e.Content)!))
                 .To(Sink.Ignore<IEnumerable<PaymentReceivedEvent>>()) // TODO: Tratar problemas no insert?
                 .Run(materializer);

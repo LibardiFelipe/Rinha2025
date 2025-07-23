@@ -41,17 +41,17 @@ namespace Rinha2025.IoC.Application
 
                             var defaultPool = actorSystem.ActorOf(
                                 Props.Create<PaymentProcessorActor>(serviceProvider, defaultProcessor)
-                                    .WithRouter(new SmallestMailboxPool(4)), name: "default-pool");
+                                    .WithRouter(new SmallestMailboxPool(8)), name: "default-pool");
 
                             var fallbackPool = actorSystem.ActorOf(
                                 Props.Create<PaymentProcessorActor>(serviceProvider, fallbackProcessor)
-                                    .WithRouter(new SmallestMailboxPool(2)), name: "fallback-pool");
+                                    .WithRouter(new SmallestMailboxPool(8)), name: "fallback-pool");
 
                             var logger = dependencyResolver.GetService<ILogger<PaymentRoutingActor>>();
                             var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
                             var paymentRoutingPool = actorSystem.ActorOf(
                                 Props.Create<PaymentRoutingActor>(logger, healthMonitor, defaultPool, fallbackPool)
-                                    .WithRouter(new SmallestMailboxPool(8)), name: "routing-pool");
+                                    .WithRouter(new SmallestMailboxPool(12)), name: "routing-pool");
 
                             actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);
                         })

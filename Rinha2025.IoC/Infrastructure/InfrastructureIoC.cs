@@ -11,11 +11,11 @@ namespace Rinha2025.IoC.Infrastructure
         public static IServiceCollection SetupInfrastructure(
             this IServiceCollection services, IConfiguration config)
         {
-            var dbConnString = config.GetConnectionString("Postgres")!;
+            //var dbConnString = config.GetConnectionString("Postgres")!;
 
             DefaultTypeMap.MatchNamesWithUnderscores = true;
-            services.AddScoped<IPaymentRepository>(
-                _ => new PaymentRepository(dbConnString));
+            services.AddSingleton<IPaymentRepository>(
+                _ => new InMemoryPaymentRepository());
 
             services.AddPaymentProcessorHttpClients(config);
 
