@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Rinha2025.Application.Actors;
 using Rinha2025.Application.Configs;
+using Rinha2025.Application.Messages;
 using Rinha2025.Domain.Services;
 
 namespace Rinha2025.IoC.Application
@@ -39,21 +40,22 @@ namespace Rinha2025.IoC.Application
                             var fallbackProcessor = dependencyResolver.GetService<IFallbackPaymentProcessorService>();
                             var serviceProvider = dependencyResolver.GetService<IServiceProvider>();
 
+                            var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
+                            var routingPool = actorSystem.ActorOf(
+                                Props.Create<PaymentRoutingActor>(healthMonitor, ActorRefs.Nobody, ActorRefs.Nobody)
+                                    .WithRouter(new SmallestMailboxPool(8)), name: "routing-pool");
+
                             var defaultPool = actorSystem.ActorOf(
-                                Props.Create<PaymentProcessorActor>(serviceProvider, defaultProcessor)
-                                    .WithRouter(new SmallestMailboxPool(8)), name: "default-pool");
+                                Props.Create<PaymentProcessorActor>(routingPool, serviceProvider, defaultProcessor)
+                                    .WithRouter(new SmallestMailboxPool(6)), name: "default-pool");
 
                             var fallbackPool = actorSystem.ActorOf(
-                                Props.Create<PaymentProcessorActor>(serviceProvider, fallbackProcessor)
-                                    .WithRouter(new SmallestMailboxPool(8)), name: "fallback-pool");
+                                Props.Create<PaymentProcessorActor>(routingPool, serviceProvider, fallbackProcessor)
+                                    .WithRouter(new SmallestMailboxPool(6)), name: "fallback-pool");
 
-                            var logger = dependencyResolver.GetService<ILogger<PaymentRoutingActor>>();
-                            var healthMonitor = actorRegistry.Get<HealthMonitorActor>();
-                            var paymentRoutingPool = actorSystem.ActorOf(
-                                Props.Create<PaymentRoutingActor>(logger, healthMonitor, defaultPool, fallbackPool)
-                                    .WithRouter(new SmallestMailboxPool(12)), name: "routing-pool");
+                            routingPool.Tell(new ProcessorsMessage(defaultPool, fallbackPool));
 
-                            actorRegistry.Register<PaymentRoutingActor>(paymentRoutingPool);
+                            actorRegistry.Register<PaymentRoutingActor>(routingPool);
                         })
                         .WithWebHealthCheck(provider);
                 });

@@ -11,14 +11,16 @@ namespace Rinha2025.Application.Actors
 {
     public sealed class PaymentProcessorActor : ReceiveActor
     {
-        private IActorRef? _routingActor;
+        private readonly IActorRef _routingActor;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentProcessorService _paymentProcessor;
 
         public PaymentProcessorActor(
+            IActorRef routingActor,
             IServiceProvider serviceProvider,
             IPaymentProcessorService paymentProcessor)
         {
+            _routingActor = routingActor;
             _paymentProcessor = paymentProcessor;
 
             using var scope = serviceProvider.CreateScope();
@@ -32,17 +34,10 @@ namespace Rinha2025.Application.Actors
                 if (!result.IsSuccess && result.Content is not null)
                 {
                     var entry = result.Content;
-                    _routingActor?.Tell(
+                    _routingActor.Tell(
                         Result<PaymentReceivedEvent>.Failure(entry));
                 }
             });
-        }
-
-        protected override void PreStart()
-        {
-            _routingActor = Context.ActorSelection("/user/routing-pool")
-                .ResolveOne(TimeSpan.FromMinutes(1)).Result;
-            base.PreStart();
         }
 
         private IActorRef CreateWriterStream()
